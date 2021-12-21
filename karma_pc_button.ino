@@ -4,8 +4,9 @@
 #include <HTTPClient.h>
 
 #define KEY_PIN 15
+#define WIFI_CHECK_INTERVAL 15000
 
-unsigned long StartTime;
+unsigned long PrevMillis = 0;
 
 void TurnOn(){
 	digitalWrite(KEY_PIN, HIGH);
@@ -48,7 +49,6 @@ class Web {
 void setup(){
 	Serial.begin(115200);
 	WiFi.begin("SIM - Starlink Network", "abc2375906");
-    StartTime = millis();
     new Web(80);
 	
 	pinMode(KEY_PIN, OUTPUT);
@@ -57,15 +57,12 @@ void setup(){
 }
 
 void loop(){
-	if(millis() - StartTime > 5000){
-		StartTime = millis();
-		if(WiFi.status() != WL_CONNECTED){
-			Serial.println("Wifi is off");
-		} else {
-			Serial.println("Wifi is on");
-			Serial.println(WiFi.localIP());
-		} 
+	unsigned long currentMillis = millis();
+	if((WiFi.status() != WL_CONNECTED) && (currentMillis - PrevMillis > WIFI_CHECK_INTERVAL)){
+		Serial.println("WiFi is dropped");
+		WiFi.disconnect();
+    	WiFi.reconnect();
+		Serial.println(WiFi.localIP());
+		PrevMillis = currentMillis;
 	}
-
-
 }
